@@ -11,7 +11,8 @@ An open-source ESP32-based portable IoT console for board games.
 
 ## 🔌 Wiring Schematic / Схема подключения
 
-![WIGO Schematic](Wigo.svg)
+![WIGO Schematic](assets/Wigo.svg)
+
 
 ---
 
