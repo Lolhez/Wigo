@@ -1,178 +1,165 @@
 # 🎮 WIGO
 
-> Портативная игровая консоль на базе ESP32 с мультиплеером через Wi‑Fi
+> Portable game console based on ESP32 with Wi‑Fi multiplayer
 
-WIGO — это самостоятельное игровое устройство. ESP32 создаёт точку доступа Wi‑Fi, раздаёт веб‑интерфейс для игроков и управляет состоянием игры. Телефоны подключаются как клиенты — серверов не требуется.
-
----
-
-## 🔧 Аппаратное обеспечение
-
-**Стандартная конфигурация:**
-- ESP32‑WROOM‑32 (плата разработки)
-- Дисплей SSD1306 128×64 по шине I²C
-- 3 кнопки управления
-- Опциональный делитель напряжения для батареи
-
-### Подключение по умолчанию
-
-| Компонент | GPIO | Примечание |
-|-----------|------|-----------|
-| OLED SDA | 21 | I²C данные |
-| OLED SCL | 22 | I²C тактирование |
-| Кнопка ↑ | 25 | Второй контакт на GND |
-| Кнопка OK | 26 | Второй контакт на GND |
-| Кнопка ↓ | 27 | Второй контакт на GND |
-| Батарея (АЦП) | 34 | Вход АЦП только |
-
-### ⚙️ Настройка пинов и оборудования
-
-Отредактируйте [`Config.h`](Config.h) перед компиляцией:
-
-- **GPIO назначения** — переназначьте пины под вашу схему
-- **Дисплей** — адрес I²C (по умолчанию `0x3C`), поворот (по умолчанию `2` = 180°)
-- **Батарея** — значения R1 и R2 делителя
-- **Сеть** — пароль Wi‑Fi точки доступа
-- **Игроки** — максимальное количество подключённых клиентов
-
-### 🔋 Делитель напряжения батареи
-
-Схема подключения:
-
-```
-Батарея (+) ─┬─ R1 ─┬─ GPIO 34 (АЦП)
-              │      │
-              └─ R2 ─┴─ GND
-```
-
-**Как настроить:**
-1. Измерьте резисторы R1 и R2
-2. Введите значения в `Config.h`
-3. Прошивка покажет напряжение в виде 4 полос заряда
-4. Это приблизительный индикатор, не точный процент
-
-**Дисплей:**
-- Стоит развёрнут на 180° по умолчанию (`WIGO_OLED_ROTATION 2`)
-- Измените на `0`, если установлен вертикально
+WIGO is a standalone game device. The ESP32 creates a Wi‑Fi access point, serves the player page, and manages the game state. Phones connect as clients rather than hosting their own game server.
 
 ---
 
-## 📱 Установка в Arduino IDE
+## 🔧 Hardware
 
-### Требования
-- Arduino IDE 1.8.x или новее
-- Плата: **ESP32 Dev Module** (или ваша версия ESP32‑WROOM‑32)
+Default configuration:
+- ESP32‑WROOM‑32 development board
+- 128×64 SSD1306 I²C display
+- 3 control buttons
+- Optional battery voltage divider
 
-### Шаги
+### Default connections
 
-1. **Откройте проект**
-   - Загрузите папку `firmware/wigo_esp32_wroom/`
-   - Откройте `Wigo_consol.ino` в Arduino IDE
+| Component | GPIO | Notes |
+|-----------|------|-------|
+| OLED SDA | 21 | I²C data |
+| OLED SCL | 22 | I²C clock |
+| UP button | 25 | Other contact to GND |
+| OK button | 26 | Other contact to GND |
+| DOWN button | 27 | Other contact to GND |
+| Battery divider output | 34 | ADC input only |
 
-2. **Выберите плату**
-   - Tools → Board → ESP32 → **ESP32 Dev Module**
+### ⚙️ Change pins and device settings
 
-3. **Установите библиотеки** (Sketch → Include Library → Manage Libraries)
+Edit [`Config.h`](Config.h) before compiling:
+
+- GPIO assignments
+- OLED address and rotation
+- Battery divider resistor values
+- Access point password
+- Player capacity
+
+### 🔋 Battery divider
+
+The divider is assumed to be:
+
+```text
+Battery positive ─ R1 ─┬─ ADC GPIO
+                       R2
+                        │
+                       GND
+```
+
+To configure it:
+1. Measure R1 and R2
+2. Enter the values in `Config.h`
+3. The firmware shows a 4-level battery indicator
+4. This is approximate, not a calibrated percentage
+
+Display settings:
+- Rotated 180° by default (`WIGO_OLED_ROTATION 2`)
+- Set to `0` if the display is mounted upright
+- Default I²C address: `0x3C`
+
+---
+
+## 📱 Arduino IDE setup
+
+### Requirements
+- Arduino IDE
+- Board: **ESP32 Dev Module** or equivalent ESP32‑WROOM‑32 board
+
+### Steps
+
+1. Open `Wigo_consol.ino` in Arduino IDE.
+2. Keep all project files in the same sketch folder.
+3. Select the board:
+   - `Tools` → `Board` → `ESP32` → `ESP32 Dev Module`
+4. Install required libraries via Library Manager:
    - **Adafruit GFX Library**
    - **Adafruit SSD1306**
    - **WebSockets by Markus Sattler**
+5. Build and upload the firmware.
 
-4. **Загрузите прошивку**
-   - Sketch → Upload или нажмите ➡️ (стрелка)
+✅ The web page is embedded in `PlayerPage.h`, so no LittleFS/SPIFFS upload is needed.
 
-✅ Веб‑страница встроена в `PlayerPage.h` — LittleFS/SPIFFS не требуются.
-
-⚠️ Проект не проверялся на всех версиях ядра. Если ошибка — сохраните версии плата/библиотек с выводом компилятора.
+⚠️ The project has not been verified against every ESP32 core/library version. If a build fails, record the exact board package and library versions along with the compiler output.
 
 ---
 
-## 📡 Подключение игроков
+## 📡 Connect a phone
 
-### Запуск устройства
+### Startup
 
-1. Включите WIGO
-2. На дисплее появится код комнаты, например: **WIGO-1234**
-3. Возле устройства появится Wi‑Fi сеть с этим именем
+When powered on, WIGO creates an access point named `WIGO-<room code>`.
 
-### На телефоне
+### On the phone
 
-1. Откройте Wi‑Fi → подключитесь к **WIGO-XXXX**
-2. Введите пароль (по умолчанию: **`wigo-game`**)
-3. Откройте браузер → перейдите на **`http://192.168.4.1`**
+1. Connect to the Wi‑Fi network `WIGO-XXXX`
+2. Use the password from `WIGO_AP_PASSWORD` in `Config.h`
+3. Open the browser and go to:
 
-⚠️ **Меняйте пароль!** Это локальная сеть, но пароль по умолчанию небезопасен.
-
----
-
-## 🎯 Игры
-
-| Игра | Минимум | Описание |
-|------|---------|---------|
-| **Bunker** | 3 игроков | Карточная игра с голосованием. Побеждает последний оставшийся. Без таймера. |
-| **Crocodile** | 1 игрок | Актёр показывает слово, остальные угадывают. 30 сек/раунд. 390 слов в колоде. |
-| **Mafia** | 3+ | Первый игрок — ведущий, видит все роли. Обсуждение и голосование. |
-| **Alias** | 2+ | Объясняйте слово без самого слова. Группа отмечает правильные ответы. 60 сек/слово. |
-| **Who Is the Spy?** | 3+ | Один шпион. Остальные получают одно место. Голосование и проверка. |
-| **Who Am I?** | 2+ | Каждый получает случайного персонажа от другого игрока и угадывает кто. |
-
----
-
-## 👥 Лимит игроков
-
-**По умолчанию:** 4 игрока
-
-**Как изменить:**
-- Отредактируйте `WIGO_MAX_PLAYERS` в `Config.h`
-- Это также меняет лимит станций Wi‑Fi
-- Библиотека WebSockets поддерживает до 5 клиентов; выше — дополнительная настройка
-
-**Важно для Crocodile:**
-- Эта игра требует ровно **1 активного игрока**
-- Счётчик считает только подключённых в игру, не просто связанных с Wi‑Fi
-
----
-
-## 📂 Структура проекта
-
-```
-Wigo_consol.ino          ← Основной скетч: запуск, меню, OLED, кнопки, батарея
-Config.h                 ← ⚙️ Ваши настройки: GPIO, I²C, пароль, вместимость
-Network.ino              ← Wi‑Fi точка доступа, HTTP, WebSocket
-GameEngine.ino           ← Логика игры Bunker, состояние лобби
-OtherGames.ino           ← Crocodile, Mafia, остальные игры
-PlayerPage.h             ← Встроенная веб‑страница (русский интерфейс)
-README.md                ← Этот файл
+```text
+http://192.168.4.1
 ```
 
----
-
-## ⚡ Известные ограничения
-
-- ⚠️ Не протестировано более чем на 4 игроках одновременно
-- 📲 Токены сеанса хранятся в `sessionStorage` браузера — закрытие вкладки = потеря доступа
-- 🔋 Индикатор батареи показывает 4 полосы, не точный процент
-- 🧪 Требуется тестирование на реальной плате для стабильности
-- 📋 Чек‑лист перед релизом в [`TESTING.md`](TESTING.md)
+The default password is `wigo-game`. Change it before sharing the device or using it with a group. This is a local party-game network, not an internet-facing service.
 
 ---
 
-## 📜 Лицензия
+## 🎯 Games
 
-MIT License — используйте свободно в личных и коммерческих проектах.
-
-[Смотрите LICENSE](LICENSE)
+| Game | Minimum players | Description |
+|------|-----------------|-------------|
+| **Bunker** | 3+ | Private character cards, discussion, voting, and elimination. Victory occurs when only two living players remain. No timers. |
+| **Crocodile** | 1 | One player acts out a prompt for the group. Each prompt lasts 30 seconds. The deck includes 390 unique prompts. |
+| **Mafia** | 3+ | One Mafia role and civilian roles. The first connected player becomes host and sees all role cards. |
+| **Alias** | 2+ | One player explains a secret word without saying the word or its parts. The group marks correct guesses. Each word lasts 60 seconds. |
+| **Who Is the Spy?** | 3+ | Everyone except one spy receives the same location. Players discuss and vote; WIGO checks the result. |
+| **Who Am I?** | 2+ | Before the round, each participant suggests a character for the others. Each player receives a random suggestion and tries to guess who they are. |
 
 ---
 
-## 🚀 Быстрый старт
+## 👥 Player capacity
 
-```bash
-1. Загрузите файлы в Arduino IDE
-2. Отредактируйте Config.h под вашу плату
-3. Установите библиотеки
-4. Загрузите на ESP32
-5. Подключитесь с телефона через Wi-Fi
-6. Начните игру!
+Default capacity: 4 players.
+
+`WIGO_MAX_PLAYERS` in `Config.h` controls both the number of game slots and the Wi‑Fi station limit. The installed WebSockets library defaults to 5 server clients, so larger values may require additional configuration.
+
+The **Crocodile** game intentionally requires exactly one connected player. The device-side count reflects active game clients, not phones that are merely associated with Wi‑Fi.
+
+---
+
+## 📂 Project files
+
+- `Wigo_consol.ino` — startup, menu, OLED, buttons, battery sampling, and main loop
+- `Config.h` — user-editable GPIO and hardware settings, AP password, and player capacity
+- `Network.ino` — SoftAP, HTTP routes, WebSocket events, and reconnect handling
+- `GameEngine.ino` — shared lobby/player state and Bunker logic
+- `OtherGames.ino` — Crocodile prompts, timer, Mafia roles, phases, and voting logic
+- `PlayerPage.h` — embedded responsive client page
+
+---
+
+## ⚡ Known limits
+
+- Default player capacity is 4 and has not been load-tested at larger values
+- Reconnect credentials are stored in browser `sessionStorage`; closing the tab/browser, or using a different browser session, may lose the token
+- Battery bands are approximate; no runtime or calibrated battery percentage is claimed
+- Hardware behavior, long-duration stability, and real-device game flows need testing on a target board
+- The manual pre-release checklist is in [`TESTING.md`](TESTING.md)
+
+---
+
+## 📜 License
+
+This project is released under the [MIT License](LICENSE).
+
+---
+
+## 🚀 Quick start
+
+```text
+1. Open the project in Arduino IDE
+2. Edit Config.h for your board and hardware
+3. Install required libraries
+4. Compile and upload to the ESP32
+5. Connect from a phone to the WIGO Wi‑Fi
+6. Open http://192.168.4.1 and start playing
 ```
-
-Вопросы? Смотрите `Config.h` — там есть комментарии к каждому параметру.
